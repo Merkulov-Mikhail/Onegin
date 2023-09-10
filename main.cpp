@@ -26,10 +26,13 @@ LL countNewLines( LL size, char* buf );
 // Loads first N symbols from file to buf
 void loadBuffer( char* buf, LL N, FILE* file );
 // strcmp, but backwards.
-// Starts compairing from the end of both strings, non alpha symbols are ignoreed
+// Starts compairing from the end of both strings, non alpha symbols are ignored
 int strcmpBack( const char* left, const char* right );
+// Start compairing from the start of both string, non alpha symbols are ignored
+int strcmpFront( const char* left, const char* right );
 // Algorithm of merge sort (https://en.wikipedia.org/wiki/Merge_sort)
-const char** mergeSort( const char** toSort, LL length );
+const char** mergeSort( const char** toSort, LL length, int ( *cmp ) ( const char*, const char* ) );
+void printStrings(const char** mas, LL size);
 
 
 int main(){
@@ -63,13 +66,24 @@ int main(){
         }
     }
 
-    const char** sortedText5 = mergeSort(text5, line);
+    const char** sortedFrontText5 = mergeSort( text5, line, strcmpFront );
+    const char** sortedBackwText5 = mergeSort( text5, line, strcmpFront );
 
-    for ( LL pos = 0; pos < nLines; pos++ ){
-        printf("%s\n", sortedText5[pos]);
-    }
+    printf("FRONT\n-------------------------\n");
 
-    free(sortedText5);
+    printStrings(sortedFrontText5, nLines);
+
+    printf("\n\n\n\n\n\n\n\n\n\nBACKWARDS\n-------------------------\n");
+
+    printStrings(sortedBackwText5, nLines);
+
+    printf("\n\n\n\n\n\n\n\n\n\nORIGINAL\n-------------------------\n");
+
+    printStrings(text5, nLines);
+
+
+    free(sortedFrontText5);
+    free(sortedBackwText5);
     free(bufText);
     free(text5);
 
@@ -100,22 +114,22 @@ void loadBuffer( char* buf, LL N, FILE* file ){
 }
 
 
-const char** mergeSort( const char** toSort, LL length ){
+const char** mergeSort( const char** toSort, LL length, int ( *cmp ) ( const char*, const char* ) ){
     if ( length <= 1 )
         return toSort;
 
     LL leftLen  = length / 2;
     LL rightLen = length - leftLen;
 
-    const char** leftSide  = mergeSort( toSort,           leftLen );
-    const char** rightSide = mergeSort( toSort + leftLen, rightLen );
+    const char** leftSide  = mergeSort( toSort,           leftLen, cmp );
+    const char** rightSide = mergeSort( toSort + leftLen, rightLen, cmp );
 
     const char** resArr = ( const char** ) calloc( sizeof( char* ), length );
 
     LL l = 0, r = 0;
     while ( l < leftLen && r < rightLen ){
 
-        if ( strcmpBack( leftSide[l], rightSide[r] ) > 0 ){
+        if ( cmp( leftSide[l], rightSide[r] ) > 0 ){
             resArr[l + r] = rightSide[r];
             r++;
         }
@@ -161,4 +175,42 @@ int strcmpBack( const char* left, const char* right ){
     if ( sizeR )
         return -1;
     return 0;
+}
+
+
+int strcmpFront( const char* left, const char* right ){
+    LL sizeL = strlen(left);
+    LL sizeR = strlen(right);
+
+    LL a = 0, b = 0;
+
+    for ( ; a < sizeL && b < sizeR; a++, b++ ){
+
+        if ( !isalpha( left[a] ) ){
+            b--;
+            continue;
+        }
+        if ( !isalpha( right[b] ) ){
+            a--;
+            continue;
+        }
+
+        if ( left[a] > right[b] )
+            return 1;
+
+        if ( left[a] < right[b] )
+            return -1;
+    }
+
+    if ( sizeL - a )
+        return 1;
+    if ( sizeR - b )
+        return -1;
+    return 0;
+}
+
+
+void printStrings(const char** mas, LL size){
+    for( LL pos = 0; pos < size; pos++)
+        printf("%s\n", mas[pos]);
 }
