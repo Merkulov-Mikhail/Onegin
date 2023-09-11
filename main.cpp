@@ -4,8 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "mergeSort.h"
 
-#define LL long long
+
+#define uint64_t long long
 #define min(a, b) (a > b) ? b : a
 
 // self explaining variable name
@@ -20,19 +22,17 @@ enum ERRORS{
 
 
 // Gets file's size via stat from sys/stat.h
-LL getFileSize( const char* fileName );
+uint64_t getFileSize( const char* fileName );
 // Goes through buf and counts number of '\n' symbols
-LL countNewLines( LL size, char* buf );
+uint64_t countNewLines( uint64_t size, char* buf );
 // Loads first N symbols from file to buf
-void loadBuffer( char* buf, LL N, FILE* file );
+void loadBuffer( char* buf, uint64_t* N, FILE* file );
 // strcmp, but backwards.
 // Starts compairing from the end of both strings, non alpha symbols are ignored
-int strcmpBack( const char* left, const char* right );
+int strcmpBack( const void* l, const void* r );
 // Start compairing from the start of both string, non alpha symbols are ignored
-int strcmpFront( const char* left, const char* right );
-// Algorithm of merge sort (https://en.wikipedia.org/wiki/Merge_sort)
-const char** mergeSort( const char** toSort, LL length, int ( *cmp ) ( const char*, const char* ) );
-void printStrings(const char** mas, LL size);
+int strcmpFront( const void* l, const void* r );
+void printStrings( const char** mas, uint64_t size );
 
 
 int main(){
@@ -44,62 +44,66 @@ int main(){
         return ERRORS::ERROR_NO_FILE;
     }
 
-    LL fileSize = getFileSize( FILE_NAME );
+    uint64_t fileSize = getFileSize( FILE_NAME );
 
     // bufText - buffer, that contains text from file
     char* bufText = ( char* ) calloc( sizeof( char ), fileSize + 1 );
-    loadBuffer( bufText, fileSize, file );
+    loadBuffer( bufText, &fileSize, file );
 
     // number on '\n' in text
-    LL nLines = countNewLines(fileSize, bufText);
+    uint64_t nLines = countNewLines(fileSize, bufText);
 
     // text5[i] refers to the i'th string from original file
     const char** text5 = ( const char** ) calloc( sizeof( char* ),  nLines + 1);
 
-    LL line = 1;
+    uint64_t line = 1;
     text5[0] = bufText;
 
-    for ( LL pos = 0; pos < fileSize; pos++ ){
+    for ( uint64_t pos = 0; pos < fileSize; pos++ ){
         if ( bufText[pos] == '\n' ) {
+
             bufText[pos] = '\0';
             text5[line++] = bufText + pos + 1;
+
         }
     }
 
-    const char** sortedFrontText5 = mergeSort( text5, line, strcmpFront );
-    const char** sortedBackwText5 = mergeSort( text5, line, strcmpFront );
-
+    mergeSort( text5, line, line * sizeof( const char** ), strcmpFront );
     printf("FRONT\n-------------------------\n");
+    printStrings( text5, nLines );
 
-    printStrings(sortedFrontText5, nLines);
+    mergeSort( text5, line, line * sizeof( const char** ), strcmpBack );
+    printf( "\n\n\n\n\n\n\n\n\n\nBACKWARDS\n-------------------------\n" );
+    printStrings( text5, nLines );
 
-    printf("\n\n\n\n\n\n\n\n\n\nBACKWARDS\n-------------------------\n");
+    printf( "\n\n\n\n\n\n\n\n\n\nORIGINAL\n-------------------------\n" );
+    printf( "%s\n", bufText );
 
-    printStrings(sortedBackwText5, nLines);
+    for ( uint64_t pos = 0; pos < fileSize; pos++ ){
+        if ( bufText[pos] != 0 ){
+            continue;
+        }
+        printf( "%s\n", bufText + pos + 1 );
+    }
 
-    printf("\n\n\n\n\n\n\n\n\n\nORIGINAL\n-------------------------\n");
-
-    printStrings(text5, nLines);
-
-
-    free(sortedFrontText5);
-    free(sortedBackwText5);
-    free(bufText);
-    free(text5);
+    free( bufText );
+    free( text5 );
 
     return 0;
 }
 
 
-LL countNewLines(LL size, char* buf){
-    LL nLines = 0;
-    for ( LL pos = 0; pos < size; pos++ )
+uint64_t countNewLines( uint64_t size, char* buf ){
+    uint64_t nLines = 0;
+
+    for ( uint64_t pos = 0; pos < size; pos++ )
         if ( buf[pos] == '\n' ) nLines++;
+
     return nLines;
 }
 
 
-LL getFileSize( const char* fileName ){
+uint64_t getFileSize( const char* fileName ){
     struct stat buf  = {};
 
     stat( fileName, &buf );
@@ -108,50 +112,21 @@ LL getFileSize( const char* fileName ){
 }
 
 
-void loadBuffer( char* buf, LL N, FILE* file ){
-    fread( buf, sizeof( char ), N, file );
-    buf[N] = 0;
+void loadBuffer( char* buf, uint64_t *N, FILE* file ){
+
+    *N = fread( buf, sizeof( char ), *N, file );
+    buf[*N] = 0;
+
 }
 
 
-const char** mergeSort( const char** toSort, LL length, int ( *cmp ) ( const char*, const char* ) ){
-    if ( length <= 1 )
-        return toSort;
+int strcmpBack( const void* l, const void* r ){
 
-    LL leftLen  = length / 2;
-    LL rightLen = length - leftLen;
+    const char* left  = * ( char** ) l;
+    const char* right = * ( char** ) r;
 
-    const char** leftSide  = mergeSort( toSort,           leftLen, cmp );
-    const char** rightSide = mergeSort( toSort + leftLen, rightLen, cmp );
-
-    const char** resArr = ( const char** ) calloc( sizeof( char* ), length );
-
-    LL l = 0, r = 0;
-    while ( l < leftLen && r < rightLen ){
-
-        if ( cmp( leftSide[l], rightSide[r] ) > 0 ){
-            resArr[l + r] = rightSide[r];
-            r++;
-        }
-        else {
-            resArr[l + r] = leftSide[l];
-            l++;
-        }
-    }
-
-    for ( ; l < leftLen; l++ )
-        resArr[l + r] = leftSide[l];
-    for ( ; r < rightLen; r++ )
-        resArr[l + r] = rightSide[r];
-
-    return resArr;
-}
-
-int strcmpBack( const char* left, const char* right ){
-
-    LL sizeL = strlen(left);
-    LL sizeR = strlen(right);
-
+    uint64_t sizeL = strlen( left );
+    uint64_t sizeR = strlen( right );
     for ( ; sizeL && sizeR; sizeL--, sizeR-- ){
 
         if ( !isalpha( left[sizeL] ) ){
@@ -172,17 +147,24 @@ int strcmpBack( const char* left, const char* right ){
 
     if ( sizeL )
         return 1;
+
     if ( sizeR )
         return -1;
+
     return 0;
 }
 
 
-int strcmpFront( const char* left, const char* right ){
-    LL sizeL = strlen(left);
-    LL sizeR = strlen(right);
+int strcmpFront( const void* l, const void* r ){
 
-    LL a = 0, b = 0;
+    const char* left  = * ( char** ) l;
+    const char* right = * ( char** ) r;
+
+
+    uint64_t sizeL = strlen( left );
+    uint64_t sizeR = strlen( right );
+
+    uint64_t a = 0, b = 0;
 
     for ( ; a < sizeL && b < sizeR; a++, b++ ){
 
@@ -210,7 +192,9 @@ int strcmpFront( const char* left, const char* right ){
 }
 
 
-void printStrings(const char** mas, LL size){
-    for( LL pos = 0; pos < size; pos++)
-        printf("%s\n", mas[pos]);
+void printStrings( const char** mas, uint64_t size ){
+
+    for( uint64_t pos = 0; pos < size; pos++)
+        printf( "%s\n", mas[pos] );
+
 }
