@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "build/buffer/buffer.h"
-#include "build/mergeSort/mergeSort.h"
-#include "build/comparator/comparator.h"
+#include "build/sources/buffer.h"
+#include "build/sources/mergeSort.h"
+#include "build/sources/comparator.h"
 
 
 #define min(a, b) (a > b) ? b : a

@@ -3,11 +3,15 @@
 
 int strcmpBack( const void* l, const void* r ){
 
-    const char* left  = * ( char** ) l;
-    const char* right = * ( char** ) r;
+    struct stringData leftStruct  = * ( struct stringData* ) l;
+    struct stringData rightStruct = * ( struct stringData* ) r;
 
-    uint64_t sizeL = strlen( left );
-    uint64_t sizeR = strlen( right );
+    const char* left  = leftStruct.ptr;
+    const char* right = rightStruct.ptr;
+
+    uint64_t sizeL = leftStruct.size;
+    uint64_t sizeR = rightStruct.size;
+
     for ( ; sizeL && sizeR; sizeL--, sizeR-- ){
 
         if ( !isalpha( left[sizeL] ) ){
@@ -38,12 +42,14 @@ int strcmpBack( const void* l, const void* r ){
 
 int strcmpFront( const void* l, const void* r ){
 
-    const char* left  = * ( char** ) l;
-    const char* right = * ( char** ) r;
+    struct stringData leftStruct  = * ( struct stringData* ) l;
+    struct stringData rightStruct = * ( struct stringData* ) r;
 
+    const char* left  = leftStruct.ptr;
+    const char* right = rightStruct.ptr;
 
-    uint64_t sizeL = strlen( left );
-    uint64_t sizeR = strlen( right );
+    uint64_t sizeL = leftStruct.size;
+    uint64_t sizeR = rightStruct.size;
 
     uint64_t a = 0, b = 0;
 

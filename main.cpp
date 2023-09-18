@@ -2,7 +2,7 @@
 
 
 
-void printStrings( const char** mas, uint64_t size, FILE* file );
+void printStrings( const struct stringData* mas, uint64_t size, FILE* file );
 
 
 int main(){
@@ -24,22 +24,22 @@ int main(){
     uint64_t nLines = countNewLines(fileSize, bufText);
 
     // text5[i] refers to the i'th string from original file
-    const char** text5 = ( const char** ) calloc( sizeof( char* ),  nLines + 1);
+    struct stringData* text5 = ( struct stringData* ) calloc( sizeof( struct stringData ),  nLines + 1);
 
-    uint64_t line = 1;
-    text5[0] = bufText;
+    text5[0].ptr  = bufText;
 
-    setZeros(bufText, text5, fileSize, &line);
+    uint64_t line = 0;
 
+    makePtrs( bufText, text5, fileSize, &line );
     // ----------------------------------------
-    mergeSort( text5, line, line * sizeof( const char** ), strcmpFront );
+    mergeSort( text5, line, line * sizeof( stringData ), strcmpFront );
 
     FILE* front = fopen(FRONT_SORTED_NAME, "w");
     printStrings( text5, nLines, front );
     fclose(front);
 
     // ----------------------------------------
-    mergeSort( text5, line, line * sizeof( const char** ), strcmpBack );
+    mergeSort( text5, line, line * sizeof( stringData ), strcmpBack );
 
     FILE* back = fopen(BACK_SORTED_NAME, "w");
     printStrings( text5, nLines, back );
@@ -59,13 +59,14 @@ int main(){
     free( bufText );
     free( text5 );
 
+    printf("ended");
     return 0;
 }
 
 
-void printStrings( const char** mas, uint64_t size, FILE* file ){
+void printStrings( const struct stringData* mas, uint64_t size, FILE* file ){
 
     for( uint64_t pos = 0; pos < size; pos++)
-        fprintf(file, "%s\n", mas[pos] );
+        fprintf(file, "%s\n", mas[pos].ptr );
 
 }
